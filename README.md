@@ -13,9 +13,9 @@ sudo ln -s /var/lib/sshlsm/sshlsm /usr/local/bin/sshlsm
 Script makes easy managing SSH keys, keys are splited, and program merges them all and adds them into ~/.ssh/authorized_keys
 
 So you can name your ssh keys like 
-joe@someserver.com
-john@someserver.com
-kelly@someserver.com 
+ - joe@someserver.com
+ - john@someserver.com
+ - kelly@someserver.com 
 
 and when you run 
 ```

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
 option_add=""
 option_remove=""
 option_list=0

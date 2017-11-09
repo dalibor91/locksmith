@@ -4,9 +4,10 @@ option_add=""
 option_remove=""
 option_list=0
 option_update=0
-option_remote_normal=0
-option_remote=0
+option_remote_normal=""
+option_remote=""
 option_help=0
+option_user_public_key="${HOME}/.ssh/id_rsa.pub"
 option_home_dir="${HOME}/.sshlsm"
 option_keys_aliases="${option_home_dir}/alias"
 option_keys_keys="${option_home_dir}/keys"
@@ -163,6 +164,45 @@ function _allowAll() {
     rm $tempfile
 }
 
+function _addMe() {
+    _log "_addMe() "
+
+    local userkey="${option_user_public_key}"
+
+    echo "Enter publc key to use or leave empty to use ${userkey}"
+    read newuserkey
+
+    if [ ! "$newuserkey" = "" ]; then userkey="$newuserkey"; fi;
+    if [ ! -f "$userkey" ]; then echo "Not found ${userkey}"; exit 6; fi;
+
+    _log "Using ${userkey}"
+    local ukey=$(cat $userkey)
+    
+    echo "Adding ..."
+
+    ssh $1 "echo '${ukey}' >> ~/.ssh/authorized_keys"
+}
+
+function _addMe1() {
+    _log "_addMe1() "
+
+    local userkey="${option_user_public_key}"
+
+    echo "Enter publc key to use or leave empty to use ${userkey}"
+    read newuserkey
+
+    if [ ! "$newuserkey" = "" ]; then userkey="$newuserkey"; fi;
+    if [ ! -f "$userkey" ]; then echo "Not found ${userkey}"; exit 6; fi;
+
+    _log "Using ${userkey}"
+    local ukey=$(cat $userkey)
+    
+    echo "Adding ..."
+
+    ssh $1 "_t=\$(date +"%s"); echo '${ukey}' > /tmp/\$_t; sshlsm -a /tmp/\$_t; rm /tmp/\$_t;"
+}
+
+
 function _update() {
     _log "_update() $@"
     local _curl=$(which curl)
@@ -188,21 +228,21 @@ function process {
         _log "_action_help() $@"
         echo "SSH locksmith or sshlsm is small script that enables you easy SSH
 key management , you can easly add, remove, update keys for specific user 
-
 sshlsm 
-    -a|--add    <key-file>       - adds key 
-    -e|--edit   <key-name>       - opens editor to edit key 
-    -r|--remove <key-name>       - removes key 
-    -l|--list                    - list all keys 
-    --addme     <user>@<host>    - adds your key to remote authorized_keys
-    --addmelsm  <user>@<host>    - adds your key to remote server via sshlsm 
-    
-Example:
+    -a|--add    <key-file>    - adds key 
+    -e|--edit   <key-name>    - opens editor to edit key 
+    -r|--remove <key-name>    - removes key 
+    -l|--list                 - list all keys 
+    -h|--help                 - prints this message
 
+    --addme     <user>@<host> - adds your key to remote authorized_keys
+    --addmelsm  <user>@<host> - adds your key to remote server via sshlsm 
+    --update                  - updates this program
+
+Example:
     sshlsm -a mykey.pub
     sshlsm -r someuser@somedomain.com
     sshlsm --addmelsm test@example.org
-
 "
     }
 
@@ -237,11 +277,23 @@ Example:
     }
 
     function _action_list() {
+        _log "_action_list()"
         echo "Keys found:"
         for k in $(ls "${option_keys_aliases}");
         do 
             echo "  ${k}"
         done;
+    }
+
+    function _action_remote_normal() {
+        _log "_action_remote_normal()"
+        _addMe $1
+    }
+
+
+    function _action_remote() {
+        _log "_action_remote()"
+        _addMe1 $1
     }
 
     local _used=0;
@@ -252,6 +304,8 @@ Example:
     if [ ! "$option_remove" = "" ]; then _action_remove "$option_remove"; _used=1; fi;
     if [ ! "$option_add" = "" ]; then _action_add "$option_add"; _used=1; fi;
     if [ ! "$option_edit" = "" ]; then _action_edit "$option_edit"; _used=1; fi;
+    if [ ! "$option_remote_normal" = "" ]; then _action_remote_normal "$option_remote_normal"; _used=1; fi;
+    if [ ! "$option_remote" = "" ]; then _action_remote "$option_remote"; _used=1; fi;
 
     if [ $_used -eq 0 ];
     then 

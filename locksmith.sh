@@ -1,2 +1,269 @@
 #!/bin/bash
 
+#!/bin/bash
+
+option_add=""
+option_remove=""
+option_list=0
+option_update=0
+option_remote_normal=0
+option_remote=0
+option_help=0
+option_home_dir="${HOME}/.sshlsm"
+option_keys_aliases="${option_home_dir}/alias"
+option_keys_keys="${option_home_dir}/keys"
+option_global_log="${option_home_dir}/log"
+option_authkeys_history="${option_home_dir}/history"
+
+function _log() {
+   local msg=$(date +"[ %Y-%m-%d %H:%M:%S ] ")
+   local msg="${msg}${1}"
+
+   echo "${msg}" >> "${option_global_log}"
+}
+
+function _dieOnFail() {
+    _log "_dieOnFail [ $1 ] [ $2 ]"
+
+    if [ ! $1 -eq 0 ];
+    then
+        if [ ! "$2" = "" ]; then echo "$2"; fi
+        exit 1;
+    fi
+}
+
+function _checkDirectories() {
+    if [ ! -d "$option_home_dir" ]; then mkdir "$option_home_dir"; _dieOnFail $? "Unable to create $option_home_dir"; chmod 700 "$option_home_dir"; fi;
+    if [ ! -d "$option_keys_keys" ]; then mkdir "$option_keys_keys"; _dieOnFail $? "Unable to create $option_keys_keys"; fi;
+    if [ ! -d "$option_keys_aliases" ]; then mkdir "$option_keys_aliases"; _dieOnFail $? " Unable to create $option_keys_aliases"; fi;
+    if [ ! -d "$option_authkeys_history" ]; then mkdir "$option_authkeys_history"; _dieOnFail $? " Unable to create $option_authkeys_history"; fi;
+}
+
+function _parseParams() {
+    while [[ $# -gt 0 ]];
+    do
+        local key=$1
+        case $key in 
+            -a|--add)
+                option_add=$2
+                shift
+                shift
+                ;;
+            -r|--remove)
+                option_remove=$2
+                shift
+                shift
+                ;;
+            -e|--edit)
+                option_edit=$2
+                shift
+                shift
+                ;; 
+            -l|--list)
+                option_list=1
+                shift
+                ;;
+            -h|--help)
+                option_help=1
+                shift
+                ;;
+            --update)
+                option_update=1
+                shift
+                ;;
+            --addme)
+                option_remote_normal=$2
+                shift;
+                shift
+                ;;
+             --addmelsm)
+                option_remote=$2
+                shift
+                shift
+                ;;
+            *)
+                #unknown 
+                #options_args="${options_args}${key} "
+                echo "Unknown -> ${key}"
+                shift
+            ;;
+        esac
+    done;
+}
+
+function _addKey() {
+    _log "_addKey() $@"
+
+    local file_alias="&"
+    until [[ ! "$file_alias" =~ [^a-zA-Z0-9@_.-] ]];
+    do
+        echo "Enter key name:"
+        read -r file_alias
+        if [ -f "${option_keys_aliases}/${file_alias}" ];
+        then 
+                echo "Alias already exists"
+                local file_alias="&"
+        fi;
+    done;
+
+    _log "${file_alias} ->" "${1}"
+
+    local new_key_name=$(date +"%Y-%m-%d_%H-%M-%S.key");
+
+    cp $1 "${option_keys_keys}/${new_key_name}"
+    ln -s "${option_keys_keys}/${new_key_name}" "${option_keys_aliases}/${file_alias}"
+    _dieOnFail $? "Unable to add"
+}
+
+function _getKey() {
+    _log "_getKey() $@"
+    if [ -f "${option_keys_aliases}/$1" ]; then echo $(readlink "${option_keys_aliases}/$1"); fi;
+}
+
+function _printKey() {
+    _log "_printKey() $@"
+    local k=$(_getKey $1)
+
+    if [ ! "$k" = "" ];
+    then 
+        cat "$k";
+    fi
+}
+
+function _updateKey() {
+    _log "_updateKey() $@"
+    local k=$(_getKey $1)
+
+    if [ ! "$k" = "" ];
+    then 
+        if [ "$DEFAULT_EDITOR" ];
+        then 
+           $DEFAULT_EDITOR "$k"
+        else 
+           nano $k
+        fi
+    fi
+}
+
+function _allowAll() {
+    _log "_allowAll() $@"
+
+    local ak="${HOME}/.ssh/authorized_keys"
+
+    if [ -f "${HOME}/${ak}" ];
+    then 
+        cp "${HOME}/${ak}" "${option_authkeys_history}/authorized_keys-`date +"%Y-%m-%d_%H-%M-%S"`"
+        _dieOnFail $? "Unable to make backup copy of authorized_keys"
+    fi;
+
+    local tempfile=$(mktemp /tmp/tmp_key.XXXXXX)
+    for key in $(ls "${option_keys_keys}");
+    do 
+            cat "${option_keys_keys}/$key" >> "$tempfile"
+    done
+    cat "$tempfile" > "$ak"
+    rm $tempfile
+}
+
+function _update() {
+    _log "_update() $@"
+    local _curl=$(which curl)
+    if [ "$_curl" = "" ];
+    then 
+        echo "Please install curl"
+        exit 4
+    fi
+
+    local abspath=$(readlink $(which sshlsm))
+    echo "Updating..."
+    curl -o "$abspath" "https://raw.githubusercontent.com/dalibor91/locksmith/master/locksmith.sh?timestamp=$(date +"%s")" > "/tmp/sshlsm_`whoami`.log" 2>&1
+
+    _dieOnFail "Unable to update check /tmp/sshlsm_`whoami`.log"
+    echo "Updated!"
+}
+
+function process {
+
+    _log "process() $@"
+
+    function _action_help() {
+        _log "_action_help() $@"
+        echo "SSH locksmith or sshlsm is small script that enables you easy SSH
+key management , you can easly add, remove, update keys for specific user 
+
+sshlsm 
+    -a|--add    <key-file>       - adds key 
+    -e|--edit   <key-name>       - opens editor to edit key 
+    -r|--remove <key-name>       - removes key 
+    -l|--list                    - list all keys 
+    --addme     <user>@<host>    - adds your key to remote authorized_keys
+    --addmelsm  <user>@<host>    - adds your key to remote server via sshlsm 
+    
+Example:
+
+    sshlsm -a mykey.pub
+    sshlsm -r someuser@somedomain.com
+    sshlsm --addmelsm test@example.org
+
+"
+    }
+
+    function _action_add() {
+        _log "_action_add $@"
+        if [ ! -f "$1" ]; then echo "Key file does not exists"; exit 2; fi;
+        _addKey $1
+        _allowAll
+
+        echo "Added."
+    }
+
+    function _action_remove() {
+        _log "_action_remove $@"
+        local key=$(_getKey $1)
+        if [ "$key" = "" ]; then echo "Unable to find key"; exit 3; fi;
+
+        rm "${key}"
+        rm "${option_keys_aliases}/${1}"
+        _allowAll
+        echo "Removed"
+    }
+
+    function _action_edit() {
+        _log "_action_edit $@"
+        local key=$(_getKey $1)
+        if [ "$key" = "" ]; then echo "Unable to find key"; exit 3; fi;
+
+        _updateKey $1
+        _allowAll
+        echo "Updated."
+    }
+
+    function _action_list() {
+        echo "Keys found:"
+        for k in $(ls "${option_keys_aliases}");
+        do 
+            echo "  ${k}"
+        done;
+    }
+
+    local _used=0;
+
+    if [ $option_help -eq 1 ]; then _action_help; _used=1; fi
+    if [ $option_list -eq 1 ]; then _action_list; _used=1; fi
+
+    if [ ! "$option_remove" = "" ]; then _action_remove "$option_remove"; _used=1; fi;
+    if [ ! "$option_add" = "" ]; then _action_add "$option_add"; _used=1; fi;
+    if [ ! "$option_edit" = "" ]; then _action_edit "$option_edit"; _used=1; fi;
+
+    if [ $_used -eq 0 ];
+    then 
+        _action_help
+    fi;
+
+}
+
+_checkDirectories
+
+_parseParams $@
+
+process

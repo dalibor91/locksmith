@@ -18,7 +18,7 @@ So you can name your ssh keys like
 
 and when you run 
 ```
-~ sshlsm -l 
+sshlsm -l 
 ```
 it will give you all keys that are added in authorized_keys
 

@@ -1,5 +1,4 @@
-# locksmith
-Small shell program for managing ssh keys. 
+Small bash program for managing ssh keys. 
 
 ## Installation
 

@@ -216,7 +216,7 @@ function _update() {
     echo "Updating..."
     curl -o "$abspath" "https://raw.githubusercontent.com/dalibor91/locksmith/master/locksmith.sh?timestamp=$(date +"%s")" > "/tmp/sshlsm_`whoami`.log" 2>&1
 
-    _dieOnFail "Unable to update check /tmp/sshlsm_`whoami`.log"
+    _dieOnFail $? "Unable to update check /tmp/sshlsm_`whoami`.log"
     echo "Updated!"
 }
 

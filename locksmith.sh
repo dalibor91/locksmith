@@ -7,12 +7,16 @@ option_update=0
 option_remote_normal=""
 option_remote=""
 option_help=0
+option_show_rmt=0
+option_edit_rmt=0
+option_clear_rmt=0
 option_user_public_key="${HOME}/.ssh/id_rsa.pub"
 option_home_dir="${HOME}/.sshlsm"
 option_keys_aliases="${option_home_dir}/alias"
 option_keys_keys="${option_home_dir}/keys"
 option_global_log="${option_home_dir}/log"
 option_authkeys_history="${option_home_dir}/history"
+option_history_remote="${option_home_dir}/remotes.history"
 
 function _log() {
    local msg=$(date +"[ %Y-%m-%d %H:%M:%S ] ")
@@ -80,6 +84,19 @@ function _parseParams() {
                 shift
                 shift
                 ;;
+            --show-remotes)
+                option_show_rmt=1
+                shift
+                ;;
+            --edit-remotes)
+                option_edit_rmt=1
+                shift
+                ;;
+             --clear-remotes)
+                option_clear_rmt=$2
+                shift
+                ;;
+                
             *)
                 #unknown 
                 #options_args="${options_args}${key} "
@@ -181,6 +198,10 @@ function _addMe() {
     echo "Adding ..."
 
     ssh $1 "echo '${ukey}' >> ~/.ssh/authorized_keys"
+    if [ $? -eq 0 ];
+    then
+      echo $1 >> "${option_history_remote}"
+    fi
 }
 
 function _addMe1() {
@@ -200,6 +221,10 @@ function _addMe1() {
     echo "Adding ..."
 
     ssh $1 "_t=\$(date +"%s"); echo '${ukey}' > /tmp/\$_t; sshlsm -a /tmp/\$_t; rm /tmp/\$_t;"
+    if [ $? -eq 0 ];
+    then
+      echo $1 >> "${option_history_remote}"
+    fi
 }
 
 
@@ -310,12 +335,36 @@ Example:
         _log "_action_remote()"
         _addMe1 $1
     }
+    
+    function _action_showrmt() {
+      _log "_action_showrmt()"
+      cat "${option_history_remote}"
+    }
+    
+    function _action_clearrmt() {
+      _log "_action_clearrmt()"
+      echo '' > "${option_history_remote}"
+    }
+    
+    function _action_editrmt() {
+      _log "_action_editrmt()"
+      
+      if [ "$DEFAULT_EDITOR" ];
+      then 
+          $DEFAULT_EDITOR "${option_history_remote}"
+      else 
+         nano "${option_history_remote}"
+      fi
+    }
 
     local _used=0;
 
-    if [ $option_help -eq 1 ]; then _action_help; _used=1; fi
-    if [ $option_list -eq 1 ]; then _action_list; _used=1; fi
+    if [ $option_help -eq 1 ]; then _action_help; _used=1; fi;
+    if [ $option_list -eq 1 ]; then _action_list; _used=1; fi;
     if [ $option_update -eq 1 ]; then _update; _used=1; fi; 
+    if [ $option_show_rmt -eq 1 ]; then _action_showrmt; _used=1; fi;
+    if [ $option_edit_rmt -eq 1 ]; then _action_editrmt; _used=1; fi;
+    if [ $option_clear_rmt -eq 1 ]; then _action_clearrmt; _used=1; fi;
 
     if [ ! "$option_remove" = "" ]; then _action_remove "$option_remove"; _used=1; fi;
     if [ ! "$option_add" = "" ]; then _action_add "$option_add"; _used=1; fi;

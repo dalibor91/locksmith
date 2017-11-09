@@ -279,6 +279,7 @@ sshlsm
     --addmelsm  <user>@<host> - adds your key to remote server via sshlsm 
     --update                  - updates this program
     --show-remotes            - shows where you added your key remotely
+                                and you can connect to it
     --edit-remotes            - opens file with remotes to edit it
     --clear-remotes           - clears file with history where you added your key 
 

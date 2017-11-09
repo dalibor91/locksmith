@@ -226,8 +226,11 @@ function process {
 
     function _action_help() {
         _log "_action_help() $@"
-        echo "SSH locksmith or sshlsm is small script that enables you easy SSH
-key management , you can easly add, remove, update keys for specific user 
+        echo "sshlsm is small script that enables you easy SSH key management. 
+You can easly add, remove, update keys for your user in his ~/.ssh/authorized_keys file 
+Whenever this script makes change to this file, it saves backup of it in ~/.sshlsm/history
+
+
 sshlsm 
     -a|--add    <key-file>    - adds key 
     -e|--edit   <key-name>    - opens editor to edit key 

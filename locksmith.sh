@@ -303,6 +303,7 @@ Example:
 
     if [ $option_help -eq 1 ]; then _action_help; _used=1; fi
     if [ $option_list -eq 1 ]; then _action_list; _used=1; fi
+    if [ $option_update -eq 1 ]; then _update; _used=1; fi; 
 
     if [ ! "$option_remove" = "" ]; then _action_remove "$option_remove"; _used=1; fi;
     if [ ! "$option_add" = "" ]; then _action_add "$option_add"; _used=1; fi;

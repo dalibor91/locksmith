@@ -226,10 +226,12 @@ function process {
 
     function _action_help() {
         _log "_action_help() $@"
-        echo "sshlsm is small script that enables you easy SSH key management. 
-You can easly add, remove, update keys for your user in his ~/.ssh/authorized_keys file 
-Whenever this script makes change to this file, it saves backup of it in ~/.sshlsm/history
-
+        echo "
+sshlsm is small script that enables you easy SSH key management. 
+You can easily add, remove, update keys for your user in his ~/.ssh/authorized_keys file 
+Or add your local key to some remote server 
+Whenever this script makes change to the authorized_keys, 
+it saves backup of it in ~/.sshlsm/history so you can revert it if you need to
 
 sshlsm 
     -a|--add    <key-file>    - adds key 

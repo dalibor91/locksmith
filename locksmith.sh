@@ -341,7 +341,24 @@ Example:
     
     function _action_showrmt() {
       _log "_action_showrmt()"
-      cat "${option_history_remote}"
+      local counter=1
+      for remote in $(cat "${option_history_remote}"); 
+      do
+         echo "${counter}. ${remote}"
+         counter=$(($counter+1))
+      done
+      
+      echo "Connect to:"
+      read connect_to
+      if [ ! "$connect_to" = "" ];
+      then
+         counter=1
+         for remote in $(cat "${option_history_remote}"); 
+         do
+            if [ "$counter" = "$connect_to" ]; then ssh $remote; break; fi;
+            counter=$(($counter+1))
+         done
+      fi
     }
     
     function _action_clearrmt() {

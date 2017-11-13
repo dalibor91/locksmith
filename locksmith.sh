@@ -255,16 +255,18 @@ function process {
 Description:
 
 SSHlsm is small script that makes SSH key management easy. 
-You can easily add, remove, update keys for your user, 
-without manually editing ~/.ssh/authorized_keys file. 
-Or you can add your local key to some remote server. 
-Whenever this script makes change to the authorized_keys, 
-it saves backup of it in ~/.sshlsm/history so you can revert it if you need to
-When adding to remote server you can chose 2 options,
---addme and --addmelsm. Difference between this 2 options is 
-that --addme will add your key directly to authorized_keys,
---addmelsm uses SSHlsm on remote server to add your key there,
-if it's installed, so you can better manage keys on remote server also.
+You  can  easily  add, remove, update  keys for your user, 
+without  manually   editing  ~/.ssh/authorized_keys  file. 
+Or  you  can  add  your  local  key to some remote server. 
+Whenever this script makes  change to the authorized_keys, 
+it  saves  backup  of  it  in ~/.sshlsm/history so you can 
+revert it if you need to.
+When adding to remote server  you  can  chose  2  options,
+--addme and --addmelsm. Difference between this 2 options 
+is  --addme will add your key directly to authorized_keys,
+--addmelsm uses SSHlsm  on remote  server to add your key 
+there  (if it's installed)  so you can better manage keys 
+on remote server also.
 
 Usage:
 
